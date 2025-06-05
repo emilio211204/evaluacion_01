@@ -1,4 +1,3 @@
-
 import 'package:evaluacion_01/navigation/Drawer.dart';
 import 'package:flutter/material.dart';
 
@@ -8,9 +7,9 @@ class Ejercicio3 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Dividir Cuenta'),),
+      appBar: AppBar(title: Text('Dividir Cuenta')),
       drawer: MiDrawer(),
-          body: Column(
+      body: Column(
         children: [
           Text('División de cuenta', style: TextStyle(fontSize: 30)),
           Container(height: 20),
@@ -33,7 +32,7 @@ Widget ingresoDatos() {
     children: [
       TextField(
         controller: totalController,
-        keyboardType: TextInputType.number,
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           labelText: 'Total de la cuenta'
@@ -49,21 +48,30 @@ Widget ingresoDatos() {
         ),
       ),
       Container(height: 10),
+      Text('¿Agregar propina?'),
+      Container(height: 10),
       Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('¿Agregar propina?'),
-          Switch(
-            value: conPropina,
-            onChanged: (value) {
-              conPropina = value;
+          ElevatedButton(
+            onPressed: () {
+              conPropina = true;
             },
+            child: Text('Sí'),
+          ),
+          SizedBox(width: 20),
+          ElevatedButton(
+            onPressed: () {
+              conPropina = false;
+            },
+            child: Text('No'),
           ),
         ],
       ),
       if (conPropina)
         TextField(
           controller: propinaController,
-          keyboardType: TextInputType.number,
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             border: OutlineInputBorder(),
             labelText: 'Porcentaje de propina'
@@ -81,33 +89,62 @@ Widget btnCalcular(context) {
 }
 
 void calcularDivision(context) {
-  double total = double.parse(totalController.text);
-  int personas = int.parse(personasController.text);
-  double propina = 0;
+  try {
+    if (totalController.text.isEmpty || personasController.text.isEmpty) {
+      throw Exception('Por favor ingrese el total y el número de personas');
+    }
 
-  if (conPropina) {
-    propina = total * (double.parse(propinaController.text) / 100);
-  }
+    double total = double.parse(totalController.text);
+    int personas = int.parse(personasController.text);
+    
+    if (total <= 0 || personas <= 0) {
+      throw Exception('El total y el número de personas deben ser mayores a 0');
+    }
 
-  double totalConPropina = total + propina;
-  double porPersona = totalConPropina / personas;
+    double propina = 0;
 
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('Resultado'),
-      content: Text(
-        conPropina
-          ? 'Total con propina: \$${totalConPropina.toStringAsFixed(2)}\n'
-            'Cada persona paga: \$${porPersona.toStringAsFixed(2)}'
-          : 'Cada persona paga: \$${porPersona.toStringAsFixed(2)}',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('OK'),
+    if (conPropina && propinaController.text.isNotEmpty) {
+      double porcentajePropina = double.parse(propinaController.text);
+      if (porcentajePropina < 0) {
+        throw Exception('El porcentaje de propina no puede ser negativo');
+      }
+      propina = total * (porcentajePropina / 100);
+    }
+
+    double totalConPropina = total + propina;
+    double porPersona = totalConPropina / personas;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Resultado'),
+        content: Text(
+          conPropina
+            ? 'Total con propina: \$${totalConPropina.toStringAsFixed(2)}\n'
+              'Cada persona paga: \$${porPersona.toStringAsFixed(2)}'
+            : 'Cada persona paga: \$${porPersona.toStringAsFixed(2)}',
         ),
-      ],
-    ),
-  );
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  } catch (e) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text(e.toString()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 }
